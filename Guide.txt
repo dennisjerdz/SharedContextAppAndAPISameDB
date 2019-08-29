@@ -1,0 +1,62 @@
+Goal:
+> Create Class Library with Code-First Entity Framework and ASP.Net Identity (for Logins/Authentication)
+> Create a MVC app, use DB context and Identity from Class Library
+> Create WEB API, use DB context and Identity from Class Library
+> The two apps using Class library DB context will connect to the same database
+
+Class Library - https://www.dotnetcurry.com/showarticle.aspx?ID=617
+
+1 Add Class Library - .NET Framework (For some reason, ADO.Net Entity Data Model doesn't show in .NET Standard)
+2 Add Item > ADO.Net Entity Data Model > Code First From Database, this will include Entity Framework in the Project
+3 Create Models
+4 Add Models to Context
+5 Modify App.Config to include Connection String
+6 Add Reference to System.Data.Entity
+
+Add Identity (Logins/Authentication) - https://stackoverflow.com/questions/23446919/moving-asp-net-identity-model-to-class-library
+
+7 Right Click on Class Library Project > Manage Nuget Packages > Install Microsoft.AspNet.Identity.EntityFramework
+8 Open context file and add class ApplicationUser that inherits from IdentityUser
+
+    public class ApplicationUser : IdentityUser
+    {
+        public async Task<ClaimsIdentity> GenerateUserIdentityAsync(UserManager<ApplicationUser> manager)
+        {
+            // Note the authenticationType must match the one defined in CookieAuthenticationOptions.AuthenticationType
+            var userIdentity = await manager.CreateIdentityAsync(this, DefaultAuthenticationTypes.ApplicationCookie);
+            // Add custom user claims here
+            return userIdentity;
+        }
+    }
+
+9 Make the Db context inherit from IdentityDbContext<ApplicationUser>
+
+    public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
+    {
+        public ApplicationDbContext()
+            : base("NAME OF CONTEXT/ADO.NET ENTITY DATA MODEL")
+        {
+        }
+    }
+
+10 From Package Manager Console, Enable-Migrations
+11 Add-Migration
+12 Update-Database
+13 After Update-Database command, the database should have the identity tables (aspnetuser,logins,etc) generated
+
+MVC Project
+
+14 Add New ASP.NET MVC Project with Individual Authentication
+15 Add Reference to the Class Library Project
+16 REBUILD SOLUTION
+17 To test, Add Controller using the Context and Model from Class Library Project, CONTROLLER SHOULD GENERATE
+18 Add ConnectionString from Class Library > App.Config to MVC > Web.Config
+19 Debug and test Controller
+
+Using Identity from Class Library
+
+20 Remove ApplicationUser class from MVC Project
+21 Replace IdentityDbContext<ApplicationUser> with the Class Library application user; IdentityDbContext<ClassLibrary.ApplicationUser>
+22 Fix dependencies, add Using ClassLibrary; to the following files; IdentityConfig.cs, StartupAuth.cs, AccountController.cs
+23 Change ConnectionString name in IdentityModels.cs to the ConnectionString name of the Class Library
+24 Register and Login to test
